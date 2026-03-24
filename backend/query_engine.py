@@ -1,98 +1,153 @@
 import re
-import networkx as nx
 
 class QueryEngine:
 
     def __init__(self, graph):
         self.graph = graph
 
-    def handle_query(self, query):
 
-        query = query.lower().strip()
+    # -----------------------------
+    # Orders for a customer
+    # -----------------------------
+    def orders_for_customer(self, customer_id):
 
-        # -----------------------------
-        # ORDERS OF CUSTOMER
-        # -----------------------------
-        m = re.search(r"customer\s*(\d+)", query)
+        node = f"customer_{customer_id}"
 
-        if "order" in query and m:
-            cust_id = m.group(1)
-            node = f"customer_{cust_id}"
+        if node not in self.graph:
+            return []
 
-            if node not in self.graph:
+        orders = [
+            n for n in self.graph.neighbors(node)
+            if n.startswith("order_")
+        ]
+
+        return orders
+
+
+    # -----------------------------
+    # Deliveries for an order
+    # -----------------------------
+    def deliveries_for_order(self, order_id):
+
+        node = f"order_{order_id}"
+
+        if node not in self.graph:
+            return []
+
+        deliveries = [
+            n for n in self.graph.neighbors(node)
+            if n.startswith("delivery_")
+        ]
+
+        return deliveries
+
+
+    # -----------------------------
+    # Invoices for an order
+    # -----------------------------
+    def invoices_for_order(self, order_id):
+
+        node = f"order_{order_id}"
+
+        if node not in self.graph:
+            return []
+
+        invoices = [
+            n for n in self.graph.neighbors(node)
+            if n.startswith("invoice_")
+        ]
+
+        return invoices
+
+
+    # -----------------------------
+    # Payments for an invoice
+    # -----------------------------
+    def payments_for_invoice(self, invoice_id):
+
+        node = f"invoice_{invoice_id}"
+
+        if node not in self.graph:
+            return []
+
+        payments = [
+            n for n in self.graph.neighbors(node)
+            if n.startswith("payment_")
+        ]
+
+        return payments
+
+
+    # -----------------------------
+    # Main query parser
+    # -----------------------------
+    def process_query(self, question):
+
+        q = question.lower()
+
+
+        # Customer → Orders
+        m = re.search(r"customer\s*(\d+)", q)
+        if "order" in q and m:
+
+            customer_id = m.group(1)
+
+            orders = self.orders_for_customer(customer_id)
+
+            if not orders:
                 return {
-                    "answer": f"No customer found with ID {cust_id}",
+                    "answer": f"No orders found for customer {customer_id}",
                     "nodes": []
                 }
 
-            orders = [
-                n for n in self.graph.neighbors(node)
-                if n.startswith("order_")
-            ]
-
             return {
-                "answer": f"Orders for customer {cust_id}: {orders}",
-                "nodes": [node] + orders
+                "answer": f"Orders for customer {customer_id}: {orders}",
+                "nodes": [f"customer_{customer_id}"] + orders
             }
 
-        # -----------------------------
-        # DELIVERIES OF ORDER
-        # -----------------------------
-        m = re.search(r"order\s*(\d+)", query)
 
-        if "deliver" in query and m:
+        # Order → Deliveries
+        m = re.search(r"order\s*(\d+)", q)
+        if "deliver" in q and m:
+
             order_id = m.group(1)
-            node = f"order_{order_id}"
 
-            deliveries = [
-                n for n in self.graph.neighbors(node)
-                if n.startswith("delivery_")
-            ]
+            deliveries = self.deliveries_for_order(order_id)
 
             return {
                 "answer": f"Deliveries for order {order_id}: {deliveries}",
-                "nodes": [node] + deliveries
+                "nodes": [f"order_{order_id}"] + deliveries
             }
 
-        # -----------------------------
-        # INVOICES OF ORDER
-        # -----------------------------
-        if "invoice" in query and m:
-            order_id = m.group(1)
-            node = f"order_{order_id}"
 
-            invoices = [
-                n for n in self.graph.neighbors(node)
-                if n.startswith("invoice_")
-            ]
+        # Order → Invoices
+        if "invoice" in q and m:
+
+            order_id = m.group(1)
+
+            invoices = self.invoices_for_order(order_id)
 
             return {
                 "answer": f"Invoices for order {order_id}: {invoices}",
-                "nodes": [node] + invoices
+                "nodes": [f"order_{order_id}"] + invoices
             }
 
-        # -----------------------------
-        # PAYMENTS OF INVOICE
-        # -----------------------------
-        m = re.search(r"invoice\s*(\d+)", query)
 
-        if "payment" in query and m:
+        # Invoice → Payments
+        m = re.search(r"invoice\s*(\d+)", q)
+        if "payment" in q and m:
+
             invoice_id = m.group(1)
-            node = f"invoice_{invoice_id}"
 
-            payments = [
-                n for n in self.graph.neighbors(node)
-                if n.startswith("payment_")
-            ]
+            payments = self.payments_for_invoice(invoice_id)
 
             return {
                 "answer": f"Payments for invoice {invoice_id}: {payments}",
-                "nodes": [node] + payments
+                "nodes": [f"invoice_{invoice_id}"] + payments
             }
 
-        # -----------------------------
-        # UNKNOWN QUESTION
-        # -----------------------------
+
+        # Unknown question
         return {
             "answer": "Query not recognized. Please ask about customers, orders, deliveries, invoices or payments.",
             "nodes": []
