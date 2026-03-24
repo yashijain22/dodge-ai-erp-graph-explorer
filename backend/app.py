@@ -1,16 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import re
-import pandas as pd
+from pydantic import BaseModel
 
 from graph_builder import G
-from guardrails import is_valid_query
 from query_engine import QueryEngine
-
 
 app = FastAPI()
 
-# Allow React frontend
+# Allow frontend (Vercel) to access backend (Render)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -19,131 +16,64 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Initialize query engine
 engine = QueryEngine(G)
 
 
+# Request schema
+class QueryRequest(BaseModel):
+    question: str
+
+
+# Root endpoint
 @app.get("/")
-def home():
-    return {"message": "ERP Graph API running"}
+def root():
+    return {"message": "Dodge AI ERP Graph Explorer API is running"}
 
 
-# GRAPH ENDPOINT (for visualization)
+# Graph endpoint (used by frontend visualization)
 @app.get("/graph")
 def get_graph():
 
     nodes = []
     edges = []
 
-    for node, data in G.nodes(data=True):
+    for n in G.nodes():
 
         nodes.append({
-            "id": node,
-            "label": node,
-            "type": data.get("type", "unknown")
+            "id": n,
+            "label": n,
+            "type": G.nodes[n].get("type", "entity")
         })
 
-    for u, v, data in G.edges(data=True):
+    for u, v in G.edges():
 
         edges.append({
-            "from": u,
-            "to": v,
-            "label": data.get("relation", "")
+            "source": u,
+            "target": v
         })
 
-    return {"nodes": nodes, "edges": edges}
-
-
-# QUERY ENDPOINT
-@app.post("/query")
-def ask_question(payload: dict):
-
-    question = payload.get("question", "").lower()
-
-    if not is_valid_query(question):
-
-        return {
-            "response": "This system answers ERP dataset questions only."
-        }
-
-
-    # -------------------------------
-    # Query 1: Orders for customer
-    # -------------------------------
-
-    if "customer" in question and "order" in question:
-
-        numbers = re.findall(r"\d+", question)
-
-        if numbers:
-
-            customer_id = numbers[0]
-
-            orders = engine.orders_for_customer(customer_id)
-
-            if orders:
-
-                clean = [o.replace("order_", "") for o in orders]
-
-                return {
-                    "response": f"Customer {customer_id} has orders: {clean}"
-                }
-
-            return {
-                "response": f"No orders found for customer {customer_id}"
-            }
-
-
-    # -------------------------------
-    # Query 2: Product with most billing docs
-    # -------------------------------
-
-    if "product" in question and "billing" in question:
-
-        product, count = engine.product_with_most_billing_docs()
-
-        return {
-            "response": f"Product {product} appears in the highest number of billing documents ({count})."
-        }
-
-
-    # -------------------------------
-    # Query 3: Trace billing document
-    # -------------------------------
-
-    if "trace" in question and "billing" in question:
-
-        numbers = re.findall(r"\d+", question)
-
-        if numbers:
-
-            billing_doc = numbers[0]
-
-            flow = engine.trace_billing_document(billing_doc)
-
-            if flow:
-
-                return {
-                    "response": " → ".join(flow)
-                }
-
-            return {
-                "response": "No flow found for this billing document."
-            }
-
-
-    # -------------------------------
-    # Query 4: Delivered but not billed
-    # -------------------------------
-
-    if "delivered" in question and "not billed" in question:
-
-        orders = engine.delivered_not_billed()
-
-        return {
-            "response": f"Orders delivered but not billed: {orders[:10]}"
-        }
-
-
     return {
-        "response": "Query understood but not supported yet."
+        "nodes": nodes,
+        "edges": edges
     }
+
+
+# Query endpoint
+@app.post("/query")
+def ask_question(req: QueryRequest):
+
+    try:
+
+        result = engine.process_query(req.question)
+
+        return result
+
+    except Exception as e:
+
+        print("Query error:", e)
+
+        return {
+            "answer": "Error processing query",
+            "nodes": []
+        }
