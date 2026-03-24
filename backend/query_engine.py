@@ -1,112 +1,99 @@
-import pandas as pd
-import os
-
+import re
+import networkx as nx
 
 class QueryEngine:
 
     def __init__(self, graph):
-
         self.graph = graph
 
-        base = "data/sap-o2c-data"
+    def handle_query(self, query):
 
-        # Load billing_document_items folder properly
-        folder = os.path.join(base, "billing_document_items")
+        query = query.lower().strip()
 
-        dfs = []
+        # -----------------------------
+        # ORDERS OF CUSTOMER
+        # -----------------------------
+        m = re.search(r"customer\s*(\d+)", query)
 
-        for file in os.listdir(folder):
+        if "order" in query and m:
+            cust_id = m.group(1)
+            node = f"customer_{cust_id}"
 
-            if file.endswith(".jsonl"):
+            if node not in self.graph:
+                return {
+                    "answer": f"No customer found with ID {cust_id}",
+                    "nodes": []
+                }
 
-                path = os.path.join(folder, file)
+            orders = [
+                n for n in self.graph.neighbors(node)
+                if n.startswith("order_")
+            ]
 
-                df = pd.read_json(path, lines=True)
+            return {
+                "answer": f"Orders for customer {cust_id}: {orders}",
+                "nodes": [node] + orders
+            }
 
-                dfs.append(df)
+        # -----------------------------
+        # DELIVERIES OF ORDER
+        # -----------------------------
+        m = re.search(r"order\s*(\d+)", query)
 
-        self.billing_items = pd.concat(dfs, ignore_index=True)
+        if "deliver" in query and m:
+            order_id = m.group(1)
+            node = f"order_{order_id}"
 
+            deliveries = [
+                n for n in self.graph.neighbors(node)
+                if n.startswith("delivery_")
+            ]
 
-    # -----------------------------
-    # Query 1: Orders for customer
-    # -----------------------------
+            return {
+                "answer": f"Deliveries for order {order_id}: {deliveries}",
+                "nodes": [node] + deliveries
+            }
 
-    def orders_for_customer(self, customer_id):
+        # -----------------------------
+        # INVOICES OF ORDER
+        # -----------------------------
+        if "invoice" in query and m:
+            order_id = m.group(1)
+            node = f"order_{order_id}"
 
-        node = f"customer_{customer_id}"
+            invoices = [
+                n for n in self.graph.neighbors(node)
+                if n.startswith("invoice_")
+            ]
 
-        if node not in self.graph:
-            return []
+            return {
+                "answer": f"Invoices for order {order_id}: {invoices}",
+                "nodes": [node] + invoices
+            }
 
-        return list(self.graph.successors(node))
+        # -----------------------------
+        # PAYMENTS OF INVOICE
+        # -----------------------------
+        m = re.search(r"invoice\s*(\d+)", query)
 
+        if "payment" in query and m:
+            invoice_id = m.group(1)
+            node = f"invoice_{invoice_id}"
 
-    # -----------------------------
-    # Query 2: Product with most billing docs
-    # -----------------------------
+            payments = [
+                n for n in self.graph.neighbors(node)
+                if n.startswith("payment_")
+            ]
 
-    def product_with_most_billing_docs(self):
+            return {
+                "answer": f"Payments for invoice {invoice_id}: {payments}",
+                "nodes": [node] + payments
+            }
 
-        counts = self.billing_items["material"].value_counts()
-
-        top_product = counts.idxmax()
-
-        top_count = counts.max()
-
-        return top_product, top_count
-
-
-    # -----------------------------
-    # Query 3: Trace billing document
-    # -----------------------------
-
-    def trace_billing_document(self, billing_doc):
-
-        node = f"invoice_{billing_doc}"
-
-        if node not in self.graph:
-            return []
-
-        flow = []
-
-        for pred in self.graph.predecessors(node):
-            flow.append(pred)
-
-        flow.append(node)
-
-        for succ in self.graph.successors(node):
-            flow.append(succ)
-
-        return flow
-
-
-    # -----------------------------
-    # Query 4: Delivered but not billed
-    # -----------------------------
-
-    def delivered_not_billed(self):
-
-        result = []
-
-        for node in self.graph.nodes:
-
-            if node.startswith("order_"):
-
-                deliveries = list(self.graph.successors(node))
-
-                if deliveries:
-
-                    billed = False
-
-                    for d in deliveries:
-
-                        invoices = list(self.graph.successors(d))
-
-                        if invoices:
-                            billed = True
-
-                    if not billed:
-                        result.append(node)
-
-        return result
+        # -----------------------------
+        # UNKNOWN QUESTION
+        # -----------------------------
+        return {
+            "answer": "Query not recognized. Please ask about customers, orders, deliveries, invoices or payments.",
+            "nodes": []
+        }
