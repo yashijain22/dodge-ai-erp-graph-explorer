@@ -12,12 +12,27 @@ function GraphView({ highlightNodes, setSelectedNode, API_URL }) {
       .then(res => res.json())
       .then(data => {
 
+        const getNodeColor = (type) => {
+
+          if (type === "customer") return "#10b981";
+          if (type === "order") return "#3b82f6";
+          if (type === "delivery") return "#f59e0b";
+          if (type === "invoice") return "#8b5cf6";
+          if (type === "payment") return "#ef4444";
+
+          return "#9ca3af";
+
+        };
+
         const nodes = data.nodes.map(n => ({
+
           id: n.id,
           label: n.label || n.id,
+
           color: highlightNodes.includes(n.id)
-            ? "#f59e0b"
-            : "#60a5fa"
+            ? "#ffcc00"
+            : getNodeColor(n.type)
+
         }));
 
         const edges = data.edges;
@@ -74,8 +89,10 @@ function GraphView({ highlightNodes, setSelectedNode, API_URL }) {
     <div
       ref={container}
       style={{
-        height: "100%",
-        width: "100%"
+        height: "700px",
+        width: "100%",
+        border: "1px solid #ddd",
+        borderRadius: "6px"
       }}
     />
   );
