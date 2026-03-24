@@ -21,7 +21,7 @@ function ChatPanel({ setHighlightNodes, API_URL }) {
 
       const data = await res.json();
 
-      setAnswer(data.answer || "No response");
+      setAnswer(data.answer || data.result || "No response");
 
       if (data.nodes) {
         setHighlightNodes(data.nodes);
