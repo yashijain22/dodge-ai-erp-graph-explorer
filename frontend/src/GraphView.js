@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Network } from "vis-network/standalone/esm/vis-network";
+import { Network } from "vis-network";
 
 function GraphView({ highlightNodes, setSelectedNode, API_URL }) {
 
@@ -9,21 +9,20 @@ function GraphView({ highlightNodes, setSelectedNode, API_URL }) {
   useEffect(() => {
 
     fetch(`${API_URL}/graph`)
-      .then((res) => res.json())
-      .then((data) => {
+      .then(res => res.json())
+      .then(data => {
 
-        const nodes = data.nodes.map((n) => ({
+        const nodes = data.nodes.map(n => ({
           id: n.id,
           label: n.label || n.id,
-          color: highlightNodes.includes(n.id) ? "#f59e0b" : "#60a5fa"
+          color: highlightNodes.includes(n.id)
+            ? "#f59e0b"
+            : "#60a5fa"
         }));
 
         const edges = data.edges;
 
-        const graphData = {
-          nodes,
-          edges
-        };
+        const graphData = { nodes, edges };
 
         const options = {
 
@@ -49,17 +48,18 @@ function GraphView({ highlightNodes, setSelectedNode, API_URL }) {
           options
         );
 
-        network.current.on("click", function (params) {
+        network.current.on("click", params => {
 
           if (params.nodes.length > 0) {
 
             const nodeId = params.nodes[0];
 
-            const connected = network.current.getConnectedNodes(nodeId);
+            const connections =
+              network.current.getConnectedNodes(nodeId);
 
             setSelectedNode({
               id: nodeId,
-              connections: connected
+              connections
             });
 
           }
@@ -71,7 +71,6 @@ function GraphView({ highlightNodes, setSelectedNode, API_URL }) {
   }, [highlightNodes, API_URL, setSelectedNode]);
 
   return (
-
     <div
       ref={container}
       style={{
@@ -79,7 +78,6 @@ function GraphView({ highlightNodes, setSelectedNode, API_URL }) {
         width: "100%"
       }}
     />
-
   );
 
 }

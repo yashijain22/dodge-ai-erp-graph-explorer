@@ -4,7 +4,6 @@ import ChatPanel from "./ChatPanel";
 
 function App() {
 
-  // Backend API URL (Render)
   const API_URL = "https://dodge-ai-erp-graph-explorer.onrender.com";
 
   const [highlightNodes, setHighlightNodes] = useState([]);
@@ -38,7 +37,6 @@ function App() {
         </p>
       </div>
 
-
       {/* MAIN DASHBOARD */}
       <div
         style={{
@@ -49,7 +47,7 @@ function App() {
         }}
       >
 
-        {/* LEFT PANEL – QUERY */}
+        {/* LEFT PANEL */}
         <div
           style={{
             width: "350px",
@@ -67,8 +65,7 @@ function App() {
 
         </div>
 
-
-        {/* CENTER – GRAPH */}
+        {/* GRAPH */}
         <div
           style={{
             flex: 1,
@@ -87,8 +84,7 @@ function App() {
 
         </div>
 
-
-        {/* RIGHT PANEL – NODE DETAILS */}
+        {/* NODE DETAILS */}
         <div
           style={{
             width: "300px",
@@ -105,13 +101,9 @@ function App() {
 
             <div>
 
-              <p>
-                <b>ID:</b> {selectedNode.id}
-              </p>
+              <p><b>ID:</b> {selectedNode.id}</p>
 
-              <p>
-                <b>Connections:</b>
-              </p>
+              <p><b>Connections:</b></p>
 
               <ul>
 

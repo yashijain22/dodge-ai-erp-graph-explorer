@@ -1,118 +1,78 @@
 import { useState } from "react";
-import axios from "axios";
 
-function ChatPanel({ setHighlightNodes }) {
+function ChatPanel({ setHighlightNodes, API_URL }) {
 
-  const [query, setQuery] = useState("");
-  const [response, setResponse] = useState("");
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState("");
 
-  const sendQuery = async () => {
+  const askQuery = async () => {
 
-    if (!query.trim()) return;
+    if (!question) return;
 
     try {
 
-      const res = await axios.post(
-        "http://localhost:8000/query",
-        { question: query }
-      );
+      const res = await fetch(`${API_URL}/query`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ question })
+      });
 
-      const answer = res.data.response;
+      const data = await res.json();
 
-      setResponse(answer);
+      setAnswer(data.answer || "No response");
 
-      // Extract numbers (IDs) from answer
-      const ids = answer.match(/\d+/g) || [];
-
-      setHighlightNodes(ids);
+      if (data.nodes) {
+        setHighlightNodes(data.nodes);
+      }
 
     } catch (err) {
-
-      setResponse("Error contacting backend.");
-
+      console.error(err);
+      setAnswer("Error querying backend.");
     }
+
   };
 
   return (
 
-    <div style={{
-      background: "white",
-      padding: "20px",
-      borderRadius: "8px",
-      boxShadow: "0px 2px 6px rgba(0,0,0,0.1)"
-    }}>
+    <div>
 
-      <h3>Ask a question about ERP data</h3>
+      <h3>Ask a Question</h3>
 
-      <div style={{
-        display: "flex",
-        gap: "10px",
-        marginTop: "10px"
-      }}>
-
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Example: Which orders belong to customer 310000108?"
-          style={{
-            flex: 1,
-            padding: "12px",
-            fontSize: "16px",
-            borderRadius: "6px",
-            border: "1px solid #ccc"
-          }}
-        />
-
-        <button
-          onClick={sendQuery}
-          style={{
-            padding: "12px 20px",
-            background: "#2563eb",
-            color: "white",
-            border: "none",
-            borderRadius: "6px",
-            cursor: "pointer"
-          }}
-        >
-          Ask
-        </button>
-
-      </div>
-
-      {response && (
-
-        <div style={{
-          marginTop: "15px",
+      <input
+        value={question}
+        onChange={(e) => setQuestion(e.target.value)}
+        placeholder="Which orders belong to customer 310000108?"
+        style={{
+          width: "100%",
           padding: "10px",
-          background: "#eef2ff",
-          borderRadius: "6px"
-        }}>
+          marginBottom: "10px"
+        }}
+      />
 
-          <strong>Answer:</strong> {response}
+      <button
+        onClick={askQuery}
+        style={{
+          width: "100%",
+          padding: "10px",
+          background: "#2563eb",
+          color: "white",
+          border: "none"
+        }}
+      >
+        Ask
+      </button>
 
-        </div>
-
-      )}
-
-      <div style={{
-        marginTop: "15px",
-        color: "#555"
-      }}>
-
-        <strong>Example queries:</strong>
-
-        <ul>
-          <li>Which orders belong to customer 310000108?</li>
-          <li>Which products are associated with the highest number of billing documents?</li>
-          <li>Trace billing document 9400635958</li>
-          <li>Find orders delivered but not billed</li>
-        </ul>
-
+      <div style={{ marginTop: "15px" }}>
+        <b>Result:</b>
+        <p>{answer}</p>
       </div>
 
     </div>
 
   );
+
 }
 
 export default ChatPanel;
