@@ -1,10 +1,17 @@
 # Dodge AI – ERP Graph Explorer
-
 An interactive graph-based system for exploring ERP Order-to-Cash (O2C) data using natural language queries.
 
 This project converts ERP transactional data into a graph representation and allows users to ask questions about relationships between customers, orders, deliveries, invoices, and payments.
 
 ---
+## Live Demo
+
+Frontend
+https://dodge-ai-erp-graph-explorer-3.vercel.app
+
+Backend API
+https://dodge-ai-erp-graph-explorer.onrender.com
+
 
 # Problem Statement
 
