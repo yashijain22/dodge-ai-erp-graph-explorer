@@ -3,8 +3,8 @@ import { Network } from "vis-network";
 
 function GraphView({ highlightNodes, setSelectedNode, API_URL }) {
 
-  const container = useRef(null);
-  const network = useRef(null);
+  const containerRef = useRef(null);
+  const networkRef = useRef(null);
 
   useEffect(() => {
 
@@ -12,69 +12,118 @@ function GraphView({ highlightNodes, setSelectedNode, API_URL }) {
       .then(res => res.json())
       .then(data => {
 
-        const getNodeColor = (type) => {
+        // -----------------------------
+        // NODE COLORS
+        // -----------------------------
+        const nodes = data.nodes.map(n => {
 
-          if (type === "customer") return "#10b981";
-          if (type === "order") return "#3b82f6";
-          if (type === "delivery") return "#f59e0b";
-          if (type === "invoice") return "#8b5cf6";
-          if (type === "payment") return "#ef4444";
+          let color = "#9ca3af";
 
-          return "#9ca3af";
+          if (n.type === "customer") color = "#10b981";
+          if (n.type === "order") color = "#3b82f6";
+          if (n.type === "delivery") color = "#f59e0b";
+          if (n.type === "invoice") color = "#8b5cf6";
+          if (n.type === "payment") color = "#ef4444";
 
-        };
+          // highlight nodes from query
+          if (highlightNodes.includes(n.id)) {
+            color = "#facc15";
+          }
 
-        const nodes = data.nodes.map(n => ({
+          return {
+            id: n.id,
+            label: n.label,
+            color: color,
+            size: highlightNodes.includes(n.id) ? 18 : 10
+          };
 
-          id: n.id,
-          label: n.label || n.id,
+        });
 
-          color: highlightNodes.includes(n.id)
-            ? "#ffcc00"
-            : getNodeColor(n.type)
 
+        // -----------------------------
+        // EDGE CONVERSION
+        // -----------------------------
+        const edges = data.edges.map(e => ({
+          from: e.source,
+          to: e.target,
+          color: "#9ca3af",
+          width: 1
         }));
 
-        const edges = data.edges;
 
-        const graphData = { nodes, edges };
+        const graphData = {
+          nodes: nodes,
+          edges: edges
+        };
 
+
+        // -----------------------------
+        // GRAPH OPTIONS (better layout)
+        // -----------------------------
         const options = {
 
           nodes: {
             shape: "dot",
-            size: 8,
-            font: { size: 12 }
+            font: {
+              size: 12,
+              color: "#111"
+            }
           },
 
           edges: {
-            color: "#aaa"
+            smooth: true
           },
 
           physics: {
-            stabilization: false
+            enabled: true,
+
+            barnesHut: {
+              gravitationalConstant: -3000,
+              centralGravity: 0.3,
+              springLength: 120,
+              springConstant: 0.04,
+              damping: 0.09
+            },
+
+            stabilization: {
+              iterations: 200
+            }
+          },
+
+          interaction: {
+            hover: true,
+            zoomView: true,
+            dragView: true
           }
 
         };
 
-        network.current = new Network(
-          container.current,
+
+        // -----------------------------
+        // CREATE NETWORK
+        // -----------------------------
+        networkRef.current = new Network(
+          containerRef.current,
           graphData,
           options
         );
 
-        network.current.on("click", params => {
+
+        // -----------------------------
+        // NODE CLICK EVENT
+        // -----------------------------
+        networkRef.current.on("click", function (params) {
 
           if (params.nodes.length > 0) {
 
             const nodeId = params.nodes[0];
 
-            const connections =
-              network.current.getConnectedNodes(nodeId);
+            const connectedNodes =
+              networkRef.current.getConnectedNodes(nodeId);
 
             setSelectedNode({
               id: nodeId,
-              connections
+              connections: connectedNodes
             });
 
           }
@@ -83,18 +132,19 @@ function GraphView({ highlightNodes, setSelectedNode, API_URL }) {
 
       });
 
-  }, [highlightNodes, API_URL, setSelectedNode]);
+  }, [highlightNodes, API_URL]);
+
 
   return (
+
     <div
-      ref={container}
+      ref={containerRef}
       style={{
-        height: "700px",
-        width: "100%",
-        border: "1px solid #ddd",
-        borderRadius: "6px"
+        height: "600px",
+        width: "100%"
       }}
     />
+
   );
 
 }
