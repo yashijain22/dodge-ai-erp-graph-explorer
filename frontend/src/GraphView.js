@@ -132,7 +132,7 @@ function GraphView({ highlightNodes, setSelectedNode, API_URL }) {
 
       });
 
-  }, [highlightNodes, API_URL]);
+  }, [highlightNodes, API_URL, setSelectedNode]);
 
 
   return (
