@@ -1,66 +1,61 @@
 import { useEffect, useRef } from "react";
-import { Network } from "vis-network";
-import axios from "axios";
+import { Network } from "vis-network/standalone/esm/vis-network";
 
-function GraphView({ highlightNodes, setSelectedNode }) {
+function GraphView({ highlightNodes, setSelectedNode, API_URL }) {
 
   const container = useRef(null);
-  const networkRef = useRef(null);
-  const nodesRef = useRef([]);
-  const edgesRef = useRef([]);
+  const network = useRef(null);
 
   useEffect(() => {
 
-    axios.get("http://localhost:8000/graph")
-      .then(res => {
+    fetch(`${API_URL}/graph`)
+      .then((res) => res.json())
+      .then((data) => {
 
-        const nodes = res.data.nodes.map(node => {
-
-          let color = "#9CA3AF";
-
-          if (node.type === "customer") color = "#facc15";
-          if (node.type === "order") color = "#22c55e";
-          if (node.type === "delivery") color = "#3b82f6";
-          if (node.type === "invoice") color = "#f97316";
-          if (node.type === "payment") color = "#ec4899";
-
-          return {
-            id: node.id,
-            label: node.id,
-            color: color,
-            size: 12
-          };
-
-        });
-
-        const edges = res.data.edges.map(e => ({
-          from: e.from,
-          to: e.to,
-          arrows: "to"
+        const nodes = data.nodes.map((n) => ({
+          id: n.id,
+          label: n.label || n.id,
+          color: highlightNodes.includes(n.id) ? "#f59e0b" : "#60a5fa"
         }));
 
-        nodesRef.current = nodes;
-        edgesRef.current = edges;
+        const edges = data.edges;
 
-        const data = { nodes, edges };
-
-        const options = {
-          physics: {
-            solver: "forceAtlas2Based",
-            stabilization: false
-          }
+        const graphData = {
+          nodes,
+          edges
         };
 
-        networkRef.current = new Network(container.current, data, options);
+        const options = {
 
-        // CLICK EVENT
-        networkRef.current.on("click", function (params) {
+          nodes: {
+            shape: "dot",
+            size: 8,
+            font: { size: 12 }
+          },
+
+          edges: {
+            color: "#aaa"
+          },
+
+          physics: {
+            stabilization: false
+          }
+
+        };
+
+        network.current = new Network(
+          container.current,
+          graphData,
+          options
+        );
+
+        network.current.on("click", function (params) {
 
           if (params.nodes.length > 0) {
 
             const nodeId = params.nodes[0];
 
-            const connected = networkRef.current.getConnectedNodes(nodeId);
+            const connected = network.current.getConnectedNodes(nodeId);
 
             setSelectedNode({
               id: nodeId,
@@ -73,40 +68,14 @@ function GraphView({ highlightNodes, setSelectedNode }) {
 
       });
 
-  }, []);
-
-
-  useEffect(() => {
-
-    if (!networkRef.current) return;
-
-    const updatedNodes = nodesRef.current.map(node => {
-
-      let highlight = highlightNodes.some(id => node.id.includes(id));
-
-      return {
-        ...node,
-        size: highlight ? 25 : 12,
-        color: highlight ? "#ef4444" : node.color
-      };
-
-    });
-
-    networkRef.current.setData({
-      nodes: updatedNodes,
-      edges: edgesRef.current
-    });
-
-  }, [highlightNodes]);
-
-
+  }, [highlightNodes, API_URL, setSelectedNode]);
 
   return (
 
     <div
       ref={container}
       style={{
-        height: "85vh",
+        height: "100%",
         width: "100%"
       }}
     />

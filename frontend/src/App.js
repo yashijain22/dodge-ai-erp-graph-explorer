@@ -4,6 +4,9 @@ import ChatPanel from "./ChatPanel";
 
 function App() {
 
+  // Backend API URL (Render)
+  const API_URL = "https://dodge-ai-erp-graph-explorer.onrender.com";
+
   const [highlightNodes, setHighlightNodes] = useState([]);
   const [selectedNode, setSelectedNode] = useState(null);
 
@@ -28,11 +31,13 @@ function App() {
         }}
       >
         <h2 style={{ margin: 0 }}>Dodge AI – ERP Graph Explorer</h2>
+
         <p style={{ margin: 0, opacity: 0.8 }}>
           Explore relationships between customers, orders, deliveries,
           invoices and payments
         </p>
       </div>
+
 
       {/* MAIN DASHBOARD */}
       <div
@@ -55,7 +60,10 @@ function App() {
           }}
         >
 
-          <ChatPanel setHighlightNodes={setHighlightNodes} />
+          <ChatPanel
+            setHighlightNodes={setHighlightNodes}
+            API_URL={API_URL}
+          />
 
         </div>
 
@@ -74,6 +82,7 @@ function App() {
           <GraphView
             highlightNodes={highlightNodes}
             setSelectedNode={setSelectedNode}
+            API_URL={API_URL}
           />
 
         </div>
