@@ -30,14 +30,13 @@ function App() {
         }}
       >
         <h2 style={{ margin: 0 }}>Dodge AI – ERP Graph Explorer</h2>
-
         <p style={{ margin: 0, opacity: 0.8 }}>
           Explore relationships between customers, orders, deliveries,
           invoices and payments
         </p>
       </div>
 
-      {/* MAIN DASHBOARD */}
+      {/* MAIN */}
       <div
         style={{
           display: "flex",
@@ -47,7 +46,7 @@ function App() {
         }}
       >
 
-        {/* LEFT PANEL */}
+        {/* QUESTION PANEL */}
         <div
           style={{
             width: "350px",
@@ -65,6 +64,7 @@ function App() {
 
         </div>
 
+
         {/* GRAPH */}
         <div
           style={{
@@ -77,12 +77,13 @@ function App() {
         >
 
           <GraphView
+            API_URL={API_URL}
             highlightNodes={highlightNodes}
             setSelectedNode={setSelectedNode}
-            API_URL={API_URL}
           />
 
         </div>
+
 
         {/* NODE DETAILS */}
         <div
@@ -101,9 +102,13 @@ function App() {
 
             <div>
 
-              <p><b>ID:</b> {selectedNode.id}</p>
+              <p>
+                <b>ID:</b> {selectedNode.id}
+              </p>
 
-              <p><b>Connections:</b></p>
+              <p>
+                <b>Connections:</b>
+              </p>
 
               <ul>
 
